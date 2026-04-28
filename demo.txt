@@ -1,0 +1,299 @@
+Here’s a **very simple Spring Boot Maven application** using **JPA** for a basic medical record (id, name, age), with minimal HTML and one test.
+
+---
+
+# 📁 Project Structure (simplified)
+
+```
+medical-app/
+ ├── src/main/java/com/example/medical
+ │    ├── MedicalApplication.java
+ │    ├── model/Patient.java
+ │    ├── repository/PatientRepository.java
+ │    ├── controller/PatientController.java
+ ├── src/main/resources
+ │    ├── application.properties
+ │    ├── templates/index.html
+ ├── src/test/java/com/example/medical
+ │    ├── PatientTest.java
+ ├── pom.xml
+```
+
+---
+
+# 🧾 1. Model (Entity)
+
+```java
+package com.example.medical.model;
+
+import jakarta.persistence.*;
+
+@Entity
+public class Patient {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private int age;
+
+    public Patient() {}
+
+    public Patient(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    public Long getId() { return id; }
+    public String getName() { return name; }
+    public int getAge() { return age; }
+
+    public void setId(Long id) { this.id = id; }
+    public void setName(String name) { this.name = name; }
+    public void setAge(int age) { this.age = age; }
+}
+```
+
+---
+
+# 📦 2. Repository
+
+```java
+package com.example.medical.repository;
+
+import com.example.medical.model.Patient;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PatientRepository extends JpaRepository<Patient, Long> {
+}
+```
+
+---
+
+# 🎮 3. Controller
+
+```java
+package com.example.medical.controller;
+
+import com.example.medical.model.Patient;
+import com.example.medical.repository.PatientRepository;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+@Controller
+public class PatientController {
+
+    private final PatientRepository repository;
+
+    public PatientController(PatientRepository repository) {
+        this.repository = repository;
+    }
+
+    @GetMapping("/")
+    public String home() {
+        return "index";
+    }
+
+    @PostMapping("/add")
+    public String addPatient(@RequestParam String name,
+                             @RequestParam int age) {
+        repository.save(new Patient(name, age));
+        return "redirect:/";
+    }
+
+    @GetMapping("/summary")
+    public String summary(Model model) {
+        model.addAttribute("patients", repository.findAll());
+        return "index";
+    }
+}
+```
+
+---
+
+# 🌐 4. Basic HTML (Thymeleaf)
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Medical App</title>
+</head>
+<body>
+
+<h2>Add Patient</h2>
+<form action="/add" method="post">
+    Name: <input type="text" name="name" required><br>
+    Age: <input type="number" name="age" required><br>
+    <button type="submit">Insert</button>
+</form>
+
+<br>
+
+<form action="/summary" method="get">
+    <button type="submit">Summary</button>
+</form>
+
+<h2>All Patients</h2>
+<ul>
+    <li th:each="p : ${patients}">
+        <span th:text="${p.id}"></span> -
+        <span th:text="${p.name}"></span> -
+        <span th:text="${p.age}"></span>
+    </li>
+</ul>
+
+</body>
+</html>
+```
+
+---
+
+# ⚙️ 5. application.properties
+
+```properties
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+spring.jpa.hibernate.ddl-auto=update
+
+spring.h2.console.enabled=true
+spring.thymeleaf.cache=false
+```
+
+---
+
+# 📦 6. pom.xml
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>medical-app</artifactId>
+    <version>1.0</version>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+    </parent>
+
+    <dependencies>
+        <!-- Web -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- JPA -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- Thymeleaf -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
+        <!-- H2 DB -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+        </dependency>
+    </dependencies>
+
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
+</project>
+```
+
+---
+
+# 🚀 7. Main Class
+
+```java
+package com.example.medical;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class MedicalApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(MedicalApplication.class, args);
+    }
+}
+```
+
+---
+
+# 🧪 8. Simple Test (JUnit)
+
+```java
+package com.example.medical;
+
+import com.example.medical.model.Patient;
+import com.example.medical.repository.PatientRepository;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringBootTest
+public class PatientTest {
+
+    @Autowired
+    private PatientRepository repository;
+
+    @Test
+    void testInsertAndFetch() {
+        Patient p = new Patient("John", 30);
+        Patient saved = repository.save(p);
+
+        assertNotNull(saved.getId());
+
+        Patient fetched = repository.findById(saved.getId()).orElse(null);
+
+        assertNotNull(fetched);
+        assertEquals("John", fetched.getName());
+        assertEquals(30, fetched.getAge());
+    }
+}
+```
+
+---
+
+# ✅ What this app does
+
+* Insert patient (name + age)
+* Store in H2 in-memory DB
+* View all records via **Summary button**
+* Simple JPA repository
+* One working test validating id, name, age
+
+---
+
+If you want, I can extend this to:
+
+* REST API version (no HTML)
+* MySQL instead of H2
+* Validation (age limits, etc.)
+* Delete/update operations

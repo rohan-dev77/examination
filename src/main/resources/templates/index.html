@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Medical App</title>
+</head>
+<body>
+
+<h2>Add Patient</h2>
+<form action="/add" method="post">
+    Name: <input type="text" name="name" required><br>
+    Age: <input type="number" name="age" required><br>
+    <button type="submit">Insert</button>
+</form>
+<br>
+<form action="/summary" method="get">
+    <button type="submit">Summary</button>
+</form>
+
+<h2>All Patients</h2>
+<ul>
+    <li th:each="p : ${patients}">
+        <span th:text="${p.id}"></span> -
+        <span th:text="${p.name}"></span> -
+        <span th:text="${p.age}"></span>
+    </li>
+</ul>
+
+</body>
+</html>
